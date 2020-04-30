@@ -12,6 +12,7 @@ using namespace std;
 using BIO_ptr = std::unique_ptr<BIO, decltype(&BIO_free)>;
 using X509_ptr = std::unique_ptr<X509, decltype(&X509_free)>;
 using EVP_PKEY_ptr = std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)>;
+using RSA_ptr = std::unique_ptr<RSA, decltype(&RSA_free)>;
 
 int main(int argc, char *argv[])
 {
@@ -23,7 +24,12 @@ int main(int argc, char *argv[])
         std::cout << "Missing filename" << std::endl;
         return 1;
     }
-    std::string inFile(argv[1]);
+    if (argc < 3)
+    {
+        std::cout << "Missing password" << std::endl;
+        return 1;
+    }
+    std::string inFile(argv[1]);    
     std::cout << inFile << std::endl;
     std::cout << std::endl;
 
@@ -33,18 +39,13 @@ int main(int argc, char *argv[])
         std::cout << "Error reading file" << std::endl;
         return 1;
     }
-
-    // Create an openssl certificate from the BIO
-    X509_ptr cert(PEM_read_bio_X509_AUX(input.get(), NULL, NULL, NULL), X509_free);
+    
+    RSA_ptr rsa(PEM_read_bio_RSAPrivateKey(input.get(), NULL, NULL, argv[2]), RSA_free);
 
     // Create a BIO to write info to stdout from the cert
-    BIO_ptr output_bio(BIO_new_fp(stdout, BIO_NOCLOSE), BIO_free);
+    BIO_ptr output_bio(BIO_new_fp(stdout, BIO_NOCLOSE), BIO_free);    
+    PEM_write_bio_RSA_PUBKEY(output_bio.get(), rsa.get());
 
-    EVP_PKEY_ptr pub_key(X509_get_pubkey(cert.get()), EVP_PKEY_free);
-
-    EVP_PKEY_print_public(output_bio.get(), pub_key.get(), 0, NULL);
-
-    PEM_write_bio_PUBKEY(output_bio.get(), pub_key.get());
 
     BIO_reset(output_bio.get());
 

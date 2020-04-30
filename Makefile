@@ -1,4 +1,4 @@
-BUILD_ID=1
+BUILD_ID=2
 .PHONY: all
 all:
 	@echo "Building ...."
@@ -15,7 +15,7 @@ test: all
 	@echo "Generating certs"
 	$(shell bash generate_test_cert.sh)
 	@echo "Verifying certs"
-	./main.exe cert.pem
+	./main.exe key.pem testpassword
 
 .PHONY: docker
 docker:
